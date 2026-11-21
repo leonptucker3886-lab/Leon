@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// A room is addressed by its six-character code and nothing else.
+// Reading a known room is allowed; listing rooms is not, so a code cannot be
+// discovered from the database. Everything outside /rooms is closed.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rooms/{code} {
+      allow get: if code.matches('^[A-Z0-9]{6}$');
+      allow list: if false;
+
+      allow create, update: if code.matches('^[A-Z0-9]{6}$')
+        && request.resource.data.keys().hasOnly(['room', 'updated'])
+        && request.resource.data.room.code == code
+        && request.resource.data.room.seats.size() <= 2;
+
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
